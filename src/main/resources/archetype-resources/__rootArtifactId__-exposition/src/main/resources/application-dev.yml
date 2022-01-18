@@ -1,0 +1,39 @@
+logging:
+  config: 'classpath:logback-dev.xml'
+
+spring:
+#if ($database == 'postgresql')
+  datasource:
+    url: jdbc:${database}://localhost:5432/testdb
+    username: root
+    password: root 
+  hibernate:
+    ddl-auto: validate
+#end
+#if ($database == 'h2')
+  datasource:
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password: 
+#end
+#if ($database == 'mongo')    
+  data:
+    mongo:
+      authentication-database: admin
+      username: root
+      password: root
+      database: testdb
+      port: 27017
+      host: localhost
+#end
+
+kafka:
+  schemaRegistry:
+    address: "http://127.0.0.1:8081"
+  bootstrapAddress: localhost:9092
+security:
+  oauth2:
+    resourceserver:
+      jwk:
+        # Put your IDP valid URL for Token validation
+        jwk-set-uri: http://127.0.0.1:8080/auth/realms/realms-name/protocol/openid-connect/certs

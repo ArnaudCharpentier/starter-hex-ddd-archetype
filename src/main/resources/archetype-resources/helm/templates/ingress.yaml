@@ -1,0 +1,23 @@
+kind: Ingress
+apiVersion: networking.k8s.io/v1beta1
+metadata:
+  name: '{{ .Values.environment }}-{{ .Values.app }}-ingress'
+  annotations:
+    ingress.bluemix.net/redirect-to-https: "True"
+    ingress.bluemix.net/rewrite-path: serviceName={{ .Values.environment }}-{{ .Values.app }}-service rewrite=/
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "21600"
+    ingress.kubernetes.io/eventsource : "true"
+    ingress.bluemix.net/ALB-ID: "private-crbpof69cf0ubl1g3ij9n0-alb1;private-crbpof69cf0ubl1g3ij9n0-alb2;private-crbpof69cf0ubl1g3ij9n0-alb3"
+spec:
+  rules:
+  - host: '{{ .Values.host }}'
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: '{{ .Values.environment }}-{{ .Values.app }}-service'
+          servicePort: 8080
+  tls:
+  - hosts:
+    - '{{ .Values.host }}'
+    secretName: '{{ .Values.cluster }}'

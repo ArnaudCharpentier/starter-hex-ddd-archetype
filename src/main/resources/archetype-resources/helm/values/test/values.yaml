@@ -1,0 +1,33 @@
+environment: test
+namespace: ns005i000167
+tier: P
+app: ${codeAP.toLowerCase()}-${rootArtifactId}
+appcode: ${codeAP}
+opscontact: LIST.PFT.FRANCECANAUXCRCPLATEAUDELIVERY_at_bnpparibas.com
+host: test-${codeAP.toLowerCase()}-${rootArtifactId}.ng4i06.staging.echonet
+gui: https://test-ap24625-ra-360-gui.ng4i06.staging.echonet
+replicas: 2
+rollingUpdate:
+  maxUnavailable: 0
+  maxSurge: 1
+limits:
+  cpu: 300m
+  memory: 512M
+requests:
+  cpu: 0m
+  memory: 0Mi
+probes:
+  startup:
+    periodSeconds: 10
+    failureThreshold: 15
+  readiness:
+    periodSeconds: 10
+    failureThreshold: 1
+  liveness:
+    periodSeconds: 5
+    failureThreshold: 1
+middleware:
+  env: npr
+  ibmscope: 9623e3be58ba47aa8be25554f6d41c7e
+debug: false
+  

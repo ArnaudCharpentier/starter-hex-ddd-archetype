@@ -1,0 +1,17 @@
+kind: Service
+apiVersion: v1
+metadata:
+  name: '{{ .Values.environment }}-{{ .Values.app }}-service'
+spec:
+  selector:
+    tier: '{{ .Values.tier }}'
+    appcode: '{{ .Values.appcode }}'
+    app: '{{ .Values.app }}'
+    env: '{{ .Values.environment }}'
+    component: '{{ .Values.component }}'
+    function: '{{ .Values.function }}'
+    opscontact: '{{ .Values.opscontact }}'
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080

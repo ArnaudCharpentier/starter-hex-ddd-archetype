@@ -1,0 +1,194 @@
+swagger: "2.0"
+
+info:
+  description: "To complete"
+  version: 1.0.0
+  title: "${rootAggregate} overview services"
+
+  contact:
+    name: "France canaux CRC - Plateau Delivery  "
+    email: "LIST.PFT.FRANCECANAUXCRCTEAMDEV@bnpparibas-pf.com"
+
+host: "localhost"
+basePath: "/"
+
+tags:
+  - name: "${rootAggregateLowerCase}-v1"
+    description: "Access to the ${rootAggregateLowerCase} informations"
+
+schemes:
+  - "https"
+
+paths:
+
+  /v1/${rootAggregateLowerCase}s:
+    get:
+      tags:
+        - "${rootAggregateLowerCase}-v1"
+      summary: "Get all the ${rootAggregate}s"
+      operationId: "getAll${rootAggregate}s"
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            type: "array"
+            items:
+              $ref: '#/definitions/${rootAggregate}'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref : '#/definitions/Error'
+      deprecated: false
+  
+  /v1/${rootAggregateLowerCase}:
+    post:
+      tags:
+        - "${rootAggregateLowerCase}-v1"
+      summary: "Add a ${rootAggregate}"
+      operationId: "add${rootAggregate}"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: body
+          name: body
+          description: "${rootAggregate} à ajouter"
+          required: true
+          schema:
+            $ref: '#/definitions/${rootAggregate}'
+      responses:
+        201:
+          description: "${rootAggregate} ajouté"
+          headers:
+            Location:
+              type: string
+              description: "New resource location"
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref : '#/definitions/Error'
+      deprecated: false
+
+    delete:
+      tags:
+        - "${rootAggregateLowerCase}-v1"
+      summary: "Remove a ${rootAggregate}"
+      operationId: "remove${rootAggregate}"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: body
+          name: body
+          description: "${rootAggregate} à supprimer"
+          required: true
+          schema:
+            $ref: '#/definitions/${rootAggregate}'
+      responses:
+        204:
+          description: "${rootAggregate} deleted"
+          schema:
+            items:
+              $ref: '#/definitions/${rootAggregate}'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref : '#/definitions/Error'
+      deprecated: false
+
+    put:
+      tags:
+        - "${rootAggregateLowerCase}-v1"
+      summary: "Update a ${rootAggregate}"
+      operationId: "update${rootAggregate}"
+      consumes:
+        - "application/json"
+      produces:
+        - "application/json"
+      parameters:
+        - in: body
+          name: body
+          description: "${rootAggregate} à mettre à jour"
+          required: true
+          schema:
+            $ref: '#/definitions/${rootAggregate}'
+      responses:
+        204:
+          description: "${rootAggregate} updated"
+          schema:
+            items:
+              $ref: '#/definitions/${rootAggregate}'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref : '#/definitions/Error'
+      deprecated: false
+
+  /ping:
+    get:
+      tags:
+        - "${rootAggregateLowerCase}-v1"
+      summary: "Ping method for health check"
+      operationId: "ping"
+      produces:
+        - "application/json"
+      responses:
+        200:
+          description: "Successful operation"
+          schema:
+            $ref: '#/definitions/PingStatus'
+        500:
+          description: "Internal Server Error"
+          schema:
+            $ref: '#/definitions/Error'
+      deprecated: false
+
+definitions:
+
+  # Message d'erreur
+  Error:
+    type: object
+    title: "Error"
+    description: "Error structure"
+    properties:
+      additional_information:
+        type: object
+        description: "Additional data associated to this error (typically for automated process). String key/value format."
+        properties:
+          additionalProperties:
+            type: string
+      error:
+        type: string
+        description: "The error code. Ex : invalid_request. To use in automated process."
+      error_description:
+        type: string
+        description: "The detailed human readable ASCII text explaining in details the error."
+       
+  # Statut du service 
+  PingStatus:
+    type: "string"
+    enum: ["ALL_OK", "DEGRADED"]
+    title: "PingStatus"
+    description: "Ping status"
+
+  # Définition de l'objet ${rootAggregate}
+  ${rootAggregate}:
+    type: object
+    properties:
+      # Id technique
+      id:
+        type: string
+        format: UUID
+      # firstName du ${rootAggregate} (For demo only)
+      firstName:
+        type: string
+      # lastName du ${rootAggregate} (For demo only)
+      lastName:
+        type: string
+      # birthDate du ${rootAggregate} (For demo only)
+      birthDate:
+        type: string

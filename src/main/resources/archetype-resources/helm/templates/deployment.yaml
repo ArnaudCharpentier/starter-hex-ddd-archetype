@@ -1,0 +1,104 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: '{{ .Values.environment }}-{{ .Values.app }}-deployment'
+spec:
+  selector:
+    matchLabels:
+      env: '{{ .Values.environment }}'
+      tier: '{{ .Values.tier }}'
+      app: '{{ .Values.app }}'
+      appcode: '{{ .Values.appcode }}'
+      opscontact: '{{ .Values.opscontact }}'
+      component: '{{ .Values.component }}'
+      function: '{{ .Values.function }}'
+  replicas: {{ .Values.replicas }}
+  progressDeadlineSeconds: {{ mul .Values.probes.startup.periodSeconds .Values.probes.startup.failureThreshold }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: {{ .Values.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.rollingUpdate.maxUnavailable }}
+  template:
+    metadata:
+      labels:
+        env: '{{ .Values.environment }}'
+        tier: '{{ .Values.tier }}'
+        app: '{{ .Values.app }}'
+        appcode: '{{ .Values.appcode }}'
+        opscontact: '{{ .Values.opscontact }}'
+        component: '{{ .Values.component }}'
+        function: '{{ .Values.function }}'
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+        prometheus.io/path: "/diagnostic/actuators/prometheus"
+    spec:
+      dnsConfig:
+        searches:
+          - net.intra
+          - fr.net.intra
+          - xpf.net.intra
+      containers:
+{{- if eq .Values.debug true }}
+      - name: 'busybox'
+        image: 'private.de.icr.io/{{ .Values.namespace }}/busybox'
+        args: [ 'sleep', '3600' ]
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 1000
+        volumeMounts:
+        - mountPath: /applis/conf
+          name: applis-conf-volume
+          readOnly: true
+{{- end }}
+      - name: 'backend'
+        image: '{{ .Values.image }}'
+        imagePullPolicy: Always
+        resources:
+          limits:
+            cpu: '{{ .Values.limits.cpu }}'
+            memory: '{{ .Values.limits.memory }}'
+          requests:
+            cpu: '{{ .Values.requests.cpu }}'
+            memory: '{{ .Values.requests.memory }}'
+        ports:
+        - containerPort: 8080
+        startupProbe:
+          httpGet:
+            path: /diagnostic/actuators/health/liveness
+            port: 8080
+          periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+        livenessProbe:
+          periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+          httpGet:
+            path: /diagnostic/actuators/health/liveness
+            port: 8080
+        readinessProbe:
+          periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+          httpGet:
+            path: /diagnostic/actuators/health/readiness
+            port: 8080
+        volumeMounts:
+        - mountPath: /applis/conf
+          name: applis-conf-volume
+          readOnly: true
+        - mountPath: /tmp
+          name: mnt-tmp
+        - mountPath: /home/pfexec
+          name: mnt-user
+      volumes:
+      - name: applis-conf-volume
+        configMap:
+          name: '{{ .Values.environment }}-{{ .Values.app }}-configmap'
+          items:
+          - key: application.yml
+            path: application.yml
+      - name: mnt-tmp
+        emptyDir: {}
+      - name: mnt-user
+        emptyDir: {}

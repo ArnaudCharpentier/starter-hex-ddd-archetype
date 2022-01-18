@@ -1,0 +1,26 @@
+#set( $symbol_pound = '#' )
+#set( $symbol_dollar = '$' )
+#set( $symbol_escape = '\' )
+spring:
+  application:
+    name: ${classPrefix}
+  jta:
+    enabled: false 
+#if ($database == 'postgresql')
+  jpa:
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    driver-class-name: org.postgresql.Driver
+    hibernate:
+      ddl-auto: update # use update to develop using java first approach
+  liquibase:
+    enabled: false
+#end
+# Logging Configurations
+logging:
+  level:
+    ROOT: WARN
+    org.springframework: WARN
+application: 
+  orgEntity: PF
+  version: '@project.version@'
+  timezone: ${user.timezone}

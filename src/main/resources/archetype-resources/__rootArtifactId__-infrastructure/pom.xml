@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<artifactId>${rootArtifactId.toLowerCase()}-infrastructure</artifactId>
+	<packaging>jar</packaging>
+	<name>${rootArtifactId.toLowerCase()}-infrastructure module</name>
+	<description>Infrastructure module</description>
+
+	<properties>
+		<kafka.avro.version>6.1.1</kafka.avro.version>
+		<avro.maven.plugin.version>1.10.2</avro.maven.plugin.version>
+	</properties>
+
+	<dependencies>
+		<!-- Project dependencies -->
+		<dependency>
+			<groupId>${groupId}</groupId>
+			<artifactId>${rootArtifactId.toLowerCase()}-domain</artifactId>
+			<version>${version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${groupId}</groupId>
+			<artifactId>${rootArtifactId.toLowerCase()}-application</artifactId>
+			<version>${version}</version>
+		</dependency>
+		<!-- Starter -->
+		#if ($database == 'mongo')
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+		</dependency>
+		#end
+		<dependency>
+			<groupId>com.bnpp.pf.pfspring</groupId>
+			<artifactId>pf-spring-starter-jpa</artifactId>
+			<exclusions>
+				<exclusion>
+					<groupId>com.bnpp.pf.pfspring</groupId>
+					<artifactId>pf-spring-liquibase</artifactId>
+				</exclusion>
+				<!-- la lib kafka-schema-registry-client importe une version des classes de javax.inject via org.glassfish.hk2.external:jakarta.inject -->
+				<exclusion>
+					<groupId>javax.inject</groupId>
+					<artifactId>javax.inject</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- Database -->
+		<dependency>
+			#if ($database == 'postgresql')
+				<!-- PostGreSQL driver -->
+				<groupId>org.postgresql</groupId>
+				<artifactId>postgresql</artifactId>
+				<scope>runtime</scope>
+			#elseif ($database == 'mongo')
+				<groupId>de.flapdoodle.embed</groupId>
+				<artifactId>de.flapdoodle.embed.mongo</artifactId>
+				<scope>test</scope>
+			#else
+				<!-- H2 driver is added by default in test scope with pf-spring-starter-test. The reason for the runtime scope -->
+				<groupId>com.h2database</groupId>
+				<artifactId>h2</artifactId>
+				<scope>runtime</scope>
+			#end
+		</dependency>
+		<!-- test -->
+		<dependency>
+			<groupId>com.bnpp.pf.pfspring</groupId>
+			<artifactId>pf-spring-starter-test</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>  
+			<exclusions>
+				<exclusion>
+					<groupId>org.hamcrest</groupId>
+					<artifactId>hamcrest-core</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<!-- Mapstruct -->
+		<dependency>
+			<groupId>org.mapstruct</groupId>
+			<artifactId>mapstruct</artifactId>
+			<version>${org.mapstruct.version}</version>
+		</dependency>
+
+		<!-- Ajout des dépendances nécessaires pour kafka -->
+		<dependency>
+			<groupId>org.springframework.kafka</groupId>
+			<artifactId>spring-kafka</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-schema-registry-client</artifactId>
+			<version>${kafka.avro.version}</version>
+			<exclusions>
+				<!-- javax.ws.rs has been renamed to jakarta.ws.rs -->
+				<exclusion>
+					<groupId>javax.ws.rs</groupId>
+					<artifactId>javax.ws.rs-api</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-avro-serializer</artifactId>
+			<version>${kafka.avro.version}</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.confluent</groupId>
+			<artifactId>kafka-streams-avro-serde</artifactId>
+			<version>${kafka.avro.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.slf4j</groupId>
+					<artifactId>slf4j-log4j12</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+
+		<dependency>
+			<groupId>org.apache.avro</groupId>
+			<artifactId>avro</artifactId>
+			<version>${avro.maven.plugin.version}</version>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-avro</artifactId>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+			
+			<!--  openapi generator to generate kafka entities -->
+			<plugin>
+				<groupId>org.openapitools</groupId>
+				<artifactId>openapi-generator-maven-plugin</artifactId>
+				<version>${openapi-generator.maven.plugin.version}</version>
+				<executions>
+					<execution>
+						<id>avro</id>
+						<phase>initialize</phase>
+						<goals>
+							<goal>generate</goal>
+						</goals>
+						<configuration>
+							<skipValidateSpec>true</skipValidateSpec>
+							<inputSpec>${project.basedir}/src/main/resources/kafka.yml</inputSpec>
+							<generatorName>avro-schema</generatorName>
+							<templateDirectory>${project.basedir}/template</templateDirectory>
+							<output>${project.build.directory}/generated-resources/avro/producer</output>
+							<modelNamePrefix>K</modelNamePrefix>
+							<packageName>${package}.infrastructure.event.model</packageName>
+							<configOptions>
+							</configOptions>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!--  openapi generator to generate kafka entities -->
+			<plugin>
+				<groupId>org.apache.avro</groupId>
+				<artifactId>avro-maven-plugin</artifactId>
+				<version>${avro.maven.plugin.version}</version>
+				<executions>
+					<!-- Generate producer from avro schema -->
+					<execution>
+						<id>producer</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>schema</goal>
+						</goals>
+						<configuration>
+							<imports>
+								<!-- Mettre les imports des shémas avsc nécessaires à la génération de toutes les entités -->
+							</imports>
+							<sourceDirectory>${project.build.directory}/generated-resources/avro/producer</sourceDirectory>
+							<outputDirectory>${project.build.directory}/generated-sources/openapi/src/main/java</outputDirectory>
+							<stringType>String</stringType>
+						</configuration>
+					</execution>
+
+					<!-- Generate consumer from avro schema -->
+					<execution>
+						<id>consumer</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>schema</goal>
+						</goals>
+						<configuration>
+							<sourceDirectory>${project.basedir}/src/main/resources/avro/consumer</sourceDirectory>
+							<outputDirectory>${project.build.directory}/generated-sources/openapi/src/main/java</outputDirectory>
+							<stringType>String</stringType>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<executions>
+					<!-- generate Querydsl JPA query types -->
+					<execution>
+						<id>default-compile</id>
+						<configuration>
+							<annotationProcessorPaths>
+								<!-- Querydsl jpa processor -->
+								<path>
+									<groupId>com.querydsl</groupId>
+									<artifactId>querydsl-apt</artifactId>
+									<version>${annotation.processor.querydsl.version}</version>
+									<classifier>jpa</classifier>
+								</path>
+								<!-- jakarta.persistence-api mandatory for querydsl jpa processor (check in future if this dependency remain mandatory) -->
+								<path>
+									<groupId>jakarta.persistence</groupId>
+									<artifactId>jakarta.persistence-api</artifactId>
+									<version>${annotation.processor.dependency.persistence-api.version}</version>
+								</path>
+								<!-- mapstruct -->
+								<path>
+									<groupId>org.mapstruct</groupId>
+									<artifactId>mapstruct-processor</artifactId>
+									<version>${org.mapstruct.version}</version>
+								</path>
+							</annotationProcessorPaths>
+						</configuration>
+					</execution>
+
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+</project>

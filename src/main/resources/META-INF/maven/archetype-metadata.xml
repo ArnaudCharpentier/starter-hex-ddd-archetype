@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<archetype-descriptor
+	xsi:schemaLocation="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0 http://maven.apache.org/xsd/archetype-descriptor-1.1.0.xsd"
+	name="training-archetype"
+	xmlns="https://maven.apache.org/plugins/maven-archetype-plugin/archetype-descriptor/1.1.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<requiredProperties>
+		<requiredProperty key="groupId">
+			<defaultValue>fr.sample.changeit</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="package">
+			<defaultValue>fr.sample.changeit</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="artifactId">
+			<defaultValue>changeit</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="version">
+			<defaultValue>0.0.1-SNAPSHOT</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="database">
+			<defaultValue>h2</defaultValue>
+			<validationRegex>h2|postgresql|mongo</validationRegex>
+		</requiredProperty>
+		<requiredProperty key="classPrefix">
+			<defaultValue>${package.getClass().forName("org.apache.velocity.util.StringUtils").removeAndHump("$artifactId", "-")}</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="rootAggregate">
+			<defaultValue>Person</defaultValue>
+			<validationRegex>^[A-Z][A-Za-z]{3,19}$</validationRegex>
+		</requiredProperty>
+		<requiredProperty key="rootAggregateLowerCase">
+			<defaultValue>${rootAggregate.toLowerCase()}</defaultValue>
+		</requiredProperty>
+		<requiredProperty key="appContext">
+			<defaultValue></defaultValue>
+		</requiredProperty>
+		<requiredProperty key="orm">
+			<defaultValue>jpa</defaultValue>
+			<validationRegex>jpa|xml</validationRegex>
+		</requiredProperty>
+		<requiredProperty key="codeAP">
+			<defaultValue>AP00000</defaultValue>
+			<validationRegex>^AP[0-9]{5}$</validationRegex>
+		</requiredProperty>
+	</requiredProperties>
+	<fileSets>
+		<fileSet encoding="UTF-8">
+			<directory></directory>
+			<includes>
+				<include>README.md</include>
+			</includes>
+		</fileSet>
+		<fileSet encoding="UTF-8">
+			<directory></directory>
+			<includes>
+				<include>Jenkinsfile</include>
+			</includes>
+		</fileSet>
+		<fileSet encoding="UTF-8">
+			<directory></directory>
+			<includes>
+				<include>Dockerfile</include>
+			</includes>
+		</fileSet>
+		<fileSet filtered="true" encoding="UTF-8">
+			<directory>helm</directory>
+			<includes>
+				<include>**/*.yaml</include>
+			</includes>
+		</fileSet>
+		<fileSet encoding="UTF-8">
+			<directory></directory>
+			<includes>
+				<include>.gitignore</include>
+			</includes>
+		</fileSet>
+	</fileSets>
+
+	<modules>
+		<module id="${rootArtifactId.toLowerCase()}-domain"
+			dir="__rootArtifactId__-domain" name="${rootArtifactId.toLowerCase()}-domain">
+			<fileSets>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/main/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/test/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+			</fileSets>
+		</module>
+		<module id="${rootArtifactId.toLowerCase()}-application"
+			dir="__rootArtifactId__-application"
+			name="${rootArtifactId.toLowerCase()}-application">
+			<fileSets>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/main/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/test/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/test/resources/integration/features</directory>
+					<includes>
+						<include>*.feature</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/test/resources/technical/features</directory>
+					<includes>
+						<include>*.feature</include>
+					</includes>
+				</fileSet>
+			</fileSets>
+		</module>
+		<module id="${rootArtifactId.toLowerCase()}-exposition"
+			dir="__rootArtifactId__-exposition"
+			name="${rootArtifactId.toLowerCase()}-exposition">
+			<fileSets>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/main/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/main/resources</directory>
+					<includes>
+						<include>**/*.yml</include>
+						<include>**/*.xml</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/test/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/test/resources</directory>
+					<includes>
+						<include>**/*.xml</include>
+					</includes>
+				</fileSet>
+			</fileSets>
+		</module>
+		<module id="${rootArtifactId.toLowerCase()}-infrastructure"
+			dir="__rootArtifactId__-infrastructure"
+			name="${rootArtifactId.toLowerCase()}-infrastructure">
+			<fileSets>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/main/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>src/main/resources</directory>
+					<includes>
+						<include>**/*.yml</include>
+						<include>**/*.xml</include>
+						<include>**/*.md</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" packaged="true" encoding="UTF-8">
+					<directory>src/test/java</directory>
+					<includes>
+						<include>**/*.java</include>
+					</includes>
+				</fileSet>
+				<fileSet filtered="true" encoding="UTF-8">
+					<directory>template</directory>
+					<includes>
+						<include>**/*.mustache</include>
+					</includes>
+				</fileSet>
+			</fileSets>
+		</module>
+	</modules>
+</archetype-descriptor>

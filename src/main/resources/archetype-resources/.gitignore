@@ -1,0 +1,40 @@
+# Intellij
+.idea
+*.iml
+*.iws
+*.ipr
+*.ids
+*.orig
+
+# Eclipse
+.classpath
+.project
+/**/.settings/
+
+# VSCode
+.vscode/*
+
+
+## Packages
+*.egg
+*.egg-info
+dist
+build
+eggs
+parts
+bin
+var
+sdist
+deb_dist
+develop-eggs
+target
+venv
+.cache
+.sonar
+.oracle_jre_usage
+.scannerwork
+
+
+## Unit test / coverage reports
+.coveragerc
+.coverage

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+    <!-- Default logback configuration provided for import, equivalent to the programmatic initialization performed by Boot. -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml" />
+
+
+    <!-- Json console appender -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <layout class="ch.qos.logback.classic.PatternLayout">
+            <Pattern>
+                %gray(%d{HH:mm:ss}) %highlight(%-5level) %cyan(%logger{36}) - %msg%n
+            </Pattern>
+        </layout>
+    </appender>
+
+    <logger level="DEBUG" name="com.bnpp.pf.crm.ra" additivity="false">
+        <appender-ref ref="CONSOLE" />
+    </logger>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+    </root>
+</configuration>

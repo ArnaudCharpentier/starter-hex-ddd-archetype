@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: '{{ .Values.environment }}-{{ .Values.app }}-configmap'
+data:
+  application.yml: |
+    # Environment specific spring boot application.yml
+    level:
+      root: INFO
+      com.bnpp.pf: DEBUG

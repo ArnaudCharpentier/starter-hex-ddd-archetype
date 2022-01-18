@@ -1,0 +1,431 @@
+@Library('pfPipeline@tags/4') _
+
+// Documentation markups
+// starter-kit: https://git-pfc.rb.echonet/pf-dev/starter-kits/ibmcloud.hello-world.spring-boot
+// pfPipeline: https://git-pfc.rb.echonet/pf-dev/tools.pfPipeline#pf-jenkins-shared-lib-pipeline-template
+
+// Notifications
+def NOTIFICATION_SEND_TO = 'LIST.PFT.FRANCECANAUXCRCTEAMDEV@bnpparibas-pf.com'
+
+pipeline {
+
+    agent {
+        label 'java'
+    }
+
+    options {
+        // the gitlab connection to use with admpico token
+        gitLabConnection('git-pfc.rb.echonet')
+        disableConcurrentBuilds()
+        buildDiscarder(logRotator(numToKeepStr: '5', artifactNumToKeepStr: '5'))
+        timeout(time: 1, unit: 'HOURS')
+        preserveStashes()
+        ansiColor('xterm')
+    }
+
+    triggers {
+        // nigthly builds
+        cron(env.BRANCH_NAME == 'develop' ? 'H H(0-7) * * *' : '')
+        // start build on gitlab push (need good configuration in gitlab for the project)
+        gitlab(triggerOnPush: true, triggerOnMergeRequest: true, branchFilterType: 'All')
+    }
+
+
+    parameters {
+        booleanParam(name: "RELEASE", description: "Build a release from current commit.", defaultValue: false)
+        booleanParam(name: "DEPLOY_DEV", description: "Deploy to dev", defaultValue: false)
+        booleanParam(name: "DEPLOY_DEV2", description: "Deploy to dev2", defaultValue: false)
+        booleanParam(name: "DEPLOY_TEST", description: "Deploy to test", defaultValue: false)
+        booleanParam(name: "DEPLOY_INT", description: "Deploy to integration", defaultValue: false)
+        booleanParam(name: "FORCE_APPLY", description: "Force apply (if unchecked do a delete/create)", defaultValue: true)
+    }
+
+
+    stages {
+        stage('prepare') {
+            agent any
+            stages {
+				stage('display-name'){
+                    steps {
+                        script {
+                            ARTIFACT_VERSION = pfUtilities.getPomVersion(pom: 'pom.xml', release: params.RELEASE)
+                            currentBuild.displayName = "#${BUILD_NUMBER} - ${ARTIFACT_VERSION}"
+                        }
+                    }
+                }
+                stage('maven-release-skip') {
+                    when {
+                        changelog '^\\[maven-release-plugin\\].*'
+                    }
+                    steps {
+                        script {
+                            currentBuild.result = 'NOT_BUILT'
+                        }
+                        error('Skipping release build')
+                    }
+                }
+            }
+        }
+
+        stage('(CI) build') {
+            when {
+                not {
+                    tag "release/*"
+                }
+            }
+            agent {
+                label 'docker && java'
+            }
+            environment {
+                ARTIFACT_ID = readMavenPom(file: 'pom.xml').getArtifactId().toLowerCase()
+                ARTIFACT_VERSION = pfUtilities.getPomVersion(pom: 'pom.xml', release: params.RELEASE)
+                DOCKER_BUILD_NAMESPACE = pfUtilities.getPomGroupId(pom: 'pom.xml', overrideGroupIdSeparator: '/').toLowerCase()
+                DOCKER_IMAGE_NAME = "${ARTIFACT_ID}"
+                DOCKER_IMAGE_TAG = "${ARTIFACT_VERSION}"
+            }
+            stages {
+                stage("scan") {
+            steps {
+                        sh 'mvn com.sonatype.clm:clm-maven-plugin:index'
+						pfIQServerAnalysis (
+                                iqApplication: ARTIFACT_ID,
+                                iqStage: 'build',
+                                iqScanPatterns: [[scanPattern: '**/sonatype-clm/module.xml']]
+                        )
+            }
+        }
+                stage('gate-controls') {
+            when {
+						expression {params.RELEASE}
+            }
+            steps {
+                        // only done on release
+                        // need evolution to have unstable state when in development
+                        // problem with sonar execution in maven
+                        pfGate(skipQuality: true)
+            }
+        }
+                // launch unit-tests & sonarqube analysis
+                stage('build') {
+            steps {
+                        script {
+                            if (params.RELEASE) {
+                                pfMvnRelease(extraGoalsAndOptions: '-U')
+                            } else {
+                                pfMvnBuild(options: '-U')
+                }
+            }
+        }
+                }
+                stage('docker') {
+                    environment {
+                        // use ant pattern because, on mvn release, artifacts are ouput in 'target/checkout/target'
+                        ARTIFACT_FILE = pfUtilities.getUniqueFile(antPattern: "**/**/target/*-exposition-${ARTIFACT_VERSION}.jar")
+            }
+            steps {
+                pfDocker(
+                                namespace: DOCKER_BUILD_NAMESPACE,
+                                imageName: DOCKER_IMAGE_NAME,
+                                imageTag: DOCKER_IMAGE_TAG,
+                        isRelease: params.RELEASE,
+                                buildArgs: "--build-arg ARTIFACT_FILE=${ARTIFACT_FILE} ."
+                )
+            }
+        }
+            }
+        }
+
+        stage('(CI) development') {
+            when {
+                anyOf {
+                    branch 'develop'
+					expression {params.DEPLOY_DEV}
+					expression {params.DEPLOY_DEV2}
+                }
+                beforeAgent true
+                beforeInput true
+            }
+            agent {
+                label 'ibmcloud-public'
+            }
+            environment {
+                IBMCLOUD_ENV = getEnvName(params.DEPLOY_DEV, params.DEPLOY_DEV2, 'dev')
+                IBMCLOUD_CLUSTER_NAME = "ku00ei000006"
+                IBMCLOUD_NAMESPACE = getNamespace('dev')
+                IBMCLOUD_CREDENTIAL = "ibmcloud-public-paas-v2"
+                DEPLOYMENT_NAME = '${IBMCLOUD_ENV}-ap24626-situation-ra-deployment'
+
+                ARTIFACT_ID = readMavenPom(file: 'pom.xml').getArtifactId().toLowerCase()
+                ARTIFACT_VERSION = pfUtilities.getPomVersion(pom: 'pom.xml', release: params.RELEASE)
+                DOCKER_BUILD_NAMESPACE = pfUtilities.getPomGroupId(pom: 'pom.xml', overrideGroupIdSeparator: '/').toLowerCase()
+				DOCKER_IMAGE_NAME = "${ARTIFACT_ID}"
+                DOCKER_IMAGE_TAG = "${ARTIFACT_VERSION}"
+				DOCKER_IMAGE = pfDocker.image(registry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY, namespace: IBMCLOUD_NAMESPACE,	imageName: DOCKER_IMAGE_NAME, imageTag: DOCKER_IMAGE_TAG)
+            }
+            stages {
+        stage('deployment') {
+                    steps {
+
+                        pfDockerTransfert(
+                                sourceNamespace: "library",
+                                sourceImageName: "busybox",
+                                sourceImageTag: "latest",
+                                targetCredentials: IBMCLOUD_CREDENTIAL,
+                                targetRegistry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY,
+                                targetNamespace: IBMCLOUD_NAMESPACE
+                        )
+
+                        pfDockerTransfert(
+                                sourceNamespace: DOCKER_BUILD_NAMESPACE,
+                                sourceImageName: DOCKER_IMAGE_NAME,
+                                sourceImageTag: DOCKER_IMAGE_TAG,
+                                targetCredentials: IBMCLOUD_CREDENTIAL,
+                                targetRegistry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY,
+                                targetNamespace: IBMCLOUD_NAMESPACE
+                        )
+
+                        pfGetIksConfig(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                credentials: IBMCLOUD_CREDENTIAL
+                        )
+
+                        pfKubernetes(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                credentials: IBMCLOUD_CREDENTIAL,
+                                forceApply: params.FORCE_APPLY,
+                                kubectlImageTag: '1.18',
+                                configurationFile: env.IKS_CONFIG,
+                                configurationPreserved: true,
+                                helmTemplate: [
+                                        // specify image tag and digest to have a pinned and human readable version
+                                        extraFlags: "--set cluster=${IBMCLOUD_CLUSTER_NAME},namespace=${IBMCLOUD_NAMESPACE},image=${DOCKER_IMAGE}@${env.PF_DOCKER_TRANSFERT_IMAGE_DIGEST},version=${ARTIFACT_VERSION}",
+								valueFile: 'helm/values/${IBMCLOUD_ENV}/values.yaml'
+                                ]
+                        )
+
+                        pfKubernetesCheckDeployment(
+                                configurationFile: env.IKS_CONFIG,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                deploymentName: DEPLOYMENT_NAME,
+                                timeoutTime: 5
+                        )
+                    }
+                }
+                stage('smoke-tests') {
+                    steps {
+                        echo "start smoke tests (see existing solutions: octane, robotframework)"
+                    }
+                }
+            }
+        }
+
+        stage('(CI) test') {
+            when {
+                anyOf {
+                    branch 'test'
+					expression {params.DEPLOY_TEST}
+                }
+                beforeAgent true
+                beforeInput true
+                }
+            agent {
+                label 'ibmcloud-public'
+            }
+            environment {
+                IBMCLOUD_ENV = 'test'
+                IBMCLOUD_CLUSTER_NAME = "ku00ei000006"
+                IBMCLOUD_NAMESPACE = getNamespace('test')
+                IBMCLOUD_CREDENTIAL = "ibmcloud-public-paas-v2"
+                DEPLOYMENT_NAME = '${IBMCLOUD_ENV}-ap24626-situation-ra-deployment'
+
+                ARTIFACT_ID = readMavenPom(file: 'pom.xml').getArtifactId().toLowerCase()
+                ARTIFACT_VERSION = pfUtilities.getPomVersion(pom: 'pom.xml', release: params.RELEASE)
+                DOCKER_BUILD_NAMESPACE = pfUtilities.getPomGroupId(pom: 'pom.xml', overrideGroupIdSeparator: '/').toLowerCase()
+                DOCKER_IMAGE_NAME = "${ARTIFACT_ID}"
+                DOCKER_IMAGE_TAG = "${ARTIFACT_VERSION}"
+				DOCKER_IMAGE = pfDocker.image(registry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY, namespace: IBMCLOUD_NAMESPACE,	imageName: DOCKER_IMAGE_NAME, imageTag: DOCKER_IMAGE_TAG)
+            }
+            stages {
+                stage('deployment') {
+                    steps {
+                        pfDockerTransfert(
+                                sourceNamespace: DOCKER_BUILD_NAMESPACE,
+                                sourceImageName: DOCKER_IMAGE_NAME,
+                                sourceImageTag: DOCKER_IMAGE_TAG,
+                                targetCredentials: IBMCLOUD_CREDENTIAL,
+                                targetRegistry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY,
+                                targetNamespace: IBMCLOUD_NAMESPACE
+                        )
+
+                        pfGetIksConfig(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                credentials: IBMCLOUD_CREDENTIAL
+                        )
+
+                        pfKubernetes(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                credentials: IBMCLOUD_CREDENTIAL,
+                                forceApply: params.FORCE_APPLY,
+                                kubectlImageTag: '1.18',
+                                configurationFile: env.IKS_CONFIG,
+                                configurationPreserved: true,
+                                helmTemplate: [
+                                        // specify image tag and digest to have a pinned and human readable version
+                                        extraFlags: "--set cluster=${IBMCLOUD_CLUSTER_NAME},namespace=${IBMCLOUD_NAMESPACE},image=${DOCKER_IMAGE}@${env.PF_DOCKER_TRANSFERT_IMAGE_DIGEST},version=${ARTIFACT_VERSION}",
+								valueFile: 'helm/values/${IBMCLOUD_ENV}/values.yaml'
+                                ]
+                        )
+
+                        pfKubernetesCheckDeployment(
+                                configurationFile: env.IKS_CONFIG,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                deploymentName: DEPLOYMENT_NAME,
+                                timeoutTime: 5
+                        )
+                    }
+                }
+                stage('automated-tests') {
+                    steps {
+                        echo "start automated tests (see existing solutions: octane, robotframework)"
+                    }
+                }
+            }
+        }
+
+        stage('(CD) integration') {
+            when {
+                tag "release/*"
+                expression { params.DEPLOY_INT }
+                beforeAgent true
+                beforeInput true
+            }
+            agent {
+                label 'ibmcloud-public'
+            }
+            environment {
+                IBMCLOUD_ENV = 'int'
+                IBMCLOUD_CLUSTER_NAME = "ku00ei000006"
+                IBMCLOUD_NAMESPACE = getNamespace('int')
+                IBMCLOUD_CREDENTIAL = "ibmcloud-public-paas-v2"
+                DEPLOYMENT_NAME = '${IBMCLOUD_ENV}-ap24626-situation-ra-deployment'
+
+                ARTIFACT_ID = readMavenPom(file: 'pom.xml').getArtifactId().toLowerCase()
+                ARTIFACT_VERSION = pfUtilities.getPomVersion(pom: 'pom.xml')
+                DOCKER_BUILD_NAMESPACE = pfUtilities.getPomGroupId(pom: 'pom.xml', overrideGroupIdSeparator: '/').toLowerCase()
+				DOCKER_IMAGE_NAME = "${ARTIFACT_ID}"
+                DOCKER_IMAGE_TAG = "${ARTIFACT_VERSION}"
+				DOCKER_IMAGE = pfDocker.image(registry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY, namespace: IBMCLOUD_NAMESPACE,	imageName: DOCKER_IMAGE_NAME, imageTag: DOCKER_IMAGE_TAG)
+            }
+            stages {
+                stage("gate-controls") {
+                    steps {
+                        // iqserver scan
+                        sh 'mvn com.sonatype.clm:clm-maven-plugin:index'
+						pfIQServerAnalysis (
+                                iqApplication: ARTIFACT_ID,
+                                iqStage: 'stage-release',
+                                iqScanPatterns: [[scanPattern: '**/sonatype-clm/module.xml']]
+                        )
+                        // pfGate
+                        pfGate(skipQuality: true)
+                    }
+                }
+                stage('deployment') {
+            steps {
+                        pfDockerTransfert(
+                                sourceNamespace: DOCKER_BUILD_NAMESPACE,
+                                sourceImageName: DOCKER_IMAGE_NAME,
+                                sourceImageTag: DOCKER_IMAGE_TAG,
+                                targetCredentials: IBMCLOUD_CREDENTIAL,
+                                targetRegistry: env.IBMCLOUD_PUBLIC_DOCKER_REGISTRY,
+                                targetNamespace: IBMCLOUD_NAMESPACE
+                        )
+
+                        pfGetIksConfig(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                credentials: IBMCLOUD_CREDENTIAL
+                )
+
+                        pfKubernetes(
+                                cluster: IBMCLOUD_CLUSTER_NAME,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                credentials: IBMCLOUD_CREDENTIAL,
+                                forceApply: params.FORCE_APPLY,
+                                kubectlImageTag: '1.18',
+                                configurationFile: env.IKS_CONFIG,
+                                configurationPreserved: true,
+                                helmTemplate: [
+                                        // specify image tag and digest to have a pinned and human readable version
+                                        extraFlags: "--set cluster=${IBMCLOUD_CLUSTER_NAME},namespace=${IBMCLOUD_NAMESPACE},image=${DOCKER_IMAGE}@${env.PF_DOCKER_TRANSFERT_IMAGE_DIGEST},version=${ARTIFACT_VERSION}",
+								valueFile: 'helm/values/${IBMCLOUD_ENV}/values.yaml'
+                                ]
+                        )
+
+                        pfKubernetesCheckDeployment(
+                                configurationFile: env.IKS_CONFIG,
+                                namespace: IBMCLOUD_NAMESPACE,
+                                deploymentName: DEPLOYMENT_NAME,
+                                timeoutTime: 5
+                        )
+                    }
+                }
+                stage('functional-tests') {
+                    steps {
+                        echo "start functional tests (end users or test team)"
+                    }
+                }
+            }
+        }
+
+    }
+
+    post {
+            success {
+                // register unit test result
+                junit(testResults: '**/**/target/surefire-reports/**/*.xml', allowEmptyResults: true)
+
+                // send notification
+                pfSendNotification();
+            }
+            failure {
+                pfSendNotification(to: getCommiterEmail("LIST.PFT.FRANCECANAUXCRCTEAMDEV@bnpparibas-pf.com"));
+            }
+    }
+}
+
+def getCommiterEmail(defaultEmail) {
+    def author = labelledShell(label : "get author email", script: "git show -s --pretty=%ae", returnStdout: true)
+    echo "GIT author : ${author}";
+    if ("develop".equals(env.BRANCH_NAME) || "master".equals(env.BRANCH_NAME)) {
+            return defaultEmail;
+        }
+    return author ?: defaultEmail;
+}
+
+
+def getNamespace(envName) {
+    if ("dev".equals(envName)) {
+        return "ns005i000165";
+    } else if ("int".equals(envName)) {
+        return "ns005i000166";
+    } else if ("test".equals(envName)) {
+        return "ns005i000167";
+    }
+}
+
+def getEnvName(env1, env2, defaultValue) {
+
+    echo "getEnvName ${env1} ${env2} ${defaultValue}";
+
+    if (env1 == true ) {
+        return defaultValue;
+    }
+    else if (env2 == true) {
+        return defaultValue + "2";
+    }
+    else {
+        return defaultValue;
+    }
+}

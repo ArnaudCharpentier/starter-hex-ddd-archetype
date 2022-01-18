@@ -1,0 +1,30 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: '{{ .Values.environment }}-{{ .Values.app }}-network-policy'
+spec:
+  podSelector:
+    matchLabels:
+      env: '{{ .Values.environment }}'
+      tier: '{{ .Values.tier }}'
+      app: '{{ .Values.app }}'
+      appcode: '{{ .Values.appcode }}'
+      opscontact: '{{ .Values.opscontact }}'
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 166.9.0.0/16
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          env: '{{ .Values.middleware.env }}'
+          ibm_scope: '{{ .Values.middleware.ibmscope }}'
+  - to:
+    - podSelector:
+        matchLabels:
+          tier: 'A'
+    ports:
+      - protocol: TCP
+        port: 8080
