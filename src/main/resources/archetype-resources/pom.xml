@@ -1,12 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<parent>
-		<groupId>com.bnpp.pf.orga.corporate</groupId>
-		<artifactId>tech-parent</artifactId>
-		<version>9.1.0</version>
-	</parent>
-
 	<groupId>${groupId}</groupId>
 	<artifactId>${codeAP.toLowerCase()}-${artifactId}</artifactId>
 	<version>${version}</version>
@@ -29,17 +23,6 @@
 		<spring-boot.version>2.6.2</spring-boot.version>
 	</properties>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>com.bnpp.pf.pfspring</groupId>
-				<artifactId>pf-spring-bom</artifactId>
-				<version>${pf.spring.bom.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<build>
 		<plugins>

@@ -14,9 +14,6 @@
         </layout>
     </appender>
 
-    <logger level="DEBUG" name="com.bnpp.pf.crm.ra" additivity="false">
-        <appender-ref ref="CONSOLE" />
-    </logger>
     <root level="INFO">
         <appender-ref ref="CONSOLE" />
     </root>

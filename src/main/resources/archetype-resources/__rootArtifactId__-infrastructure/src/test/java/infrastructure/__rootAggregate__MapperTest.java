@@ -15,7 +15,6 @@ import ${package}.domain.common.model.UniqueId;
 import ${package}.domain.${rootAggregateLowerCase.toLowerCase()}.model.${rootAggregate};
 import ${package}.infrastructure.persistence.adapter.${rootAggregate}Mapper;
 import ${package}.infrastructure.persistence.model.${rootAggregate}Entity;
-import com.bnpp.pf.pfspring.core.profile.PfSpringProfiles;
 
 import org.junit.jupiter.api.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +24,7 @@ import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-@ActiveProfiles(PfSpringProfiles.TEST)
+@ActiveProfiles("test")
 @EnableAutoConfiguration
 @RunWith(SpringJUnit4ClassRunner.class)
 public class ${rootAggregate}MapperTest {

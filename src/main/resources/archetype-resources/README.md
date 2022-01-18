@@ -52,7 +52,7 @@ Pour cela :
   * ```mvn sonar:sonar -D'sonar.issuesreport.html.enable=true'```
   * Vous devriez obtenir une url à la fin du rapport :
   ```
-  [INFO] ANALYSIS SUCCESSFUL, you can browse http://localhost:9000/dashboard?id=com.bnpp.pf.your-project
+  [INFO] ANALYSIS SUCCESSFUL, you can browse http://localhost:9000/dashboard?id=fr.sample.your-project
   ```
 
   Cliquez sur le lien pour avoir l'intégralité de votre rapport

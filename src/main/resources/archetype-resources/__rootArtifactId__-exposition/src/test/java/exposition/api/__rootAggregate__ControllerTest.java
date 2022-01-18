@@ -15,8 +15,6 @@ import ${package}.application.service.Recuperer${rootAggregate}Service;
 import ${package}.application.service.Supprimer${rootAggregate}Service;
 import ${package}.exposition.adapter.${rootAggregate}ExpositionMapper;
 import ${package}.exposition.model.${rootAggregate}Dto;
-import com.bnpp.pf.pfspring.core.profile.PfSpringProfiles;
-import com.bnpp.pf.pfspring.test.Tags;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 

@@ -35,8 +35,6 @@ import ${package}.domain.common.model.UniqueId;
 import java.time.LocalDate;
 #end
 import ${package}.infrastructure.persistence.repository.${rootAggregate}Repository;
-import com.bnpp.pf.pfspring.core.profile.PfSpringProfiles;
-import com.bnpp.pf.pfspring.test.Tags;
 
 /**
  * Test class.
@@ -50,7 +48,7 @@ import com.bnpp.pf.pfspring.test.Tags;
  */
 @DataJpaTest(showSql = true)
 @Tag(Tags.COMPONENT)
-@ActiveProfiles(PfSpringProfiles.TEST)
+@ActiveProfiles("test")
 @ContextConfiguration(classes = {${rootAggregate}Repository.class})
 @EnableAutoConfiguration
 public class ${rootAggregate}RepositoryTest {

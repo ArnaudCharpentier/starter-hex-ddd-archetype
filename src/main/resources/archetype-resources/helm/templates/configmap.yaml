@@ -7,4 +7,3 @@ data:
     # Environment specific spring boot application.yml
     level:
       root: INFO
-      com.bnpp.pf: DEBUG
