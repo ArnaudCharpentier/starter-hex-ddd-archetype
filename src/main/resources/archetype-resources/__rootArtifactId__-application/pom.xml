@@ -10,8 +10,9 @@
 	<description>Application module</description>
 
 	<properties>
-		<cucumber.version>6.10.4</cucumber.version>
+		<cucumber.version>7.2.3</cucumber.version>
 		<junit-vintage-engine.version>5.7.2</junit-vintage-engine.version>
+		<oidc.version>9.22</oidc.version>
 	</properties>
 
 	<dependencies>
@@ -28,29 +29,15 @@
 			<artifactId>spring-tx</artifactId>
 		</dependency>
 #end
-		<!-- pf spring core -->
-		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-core</artifactId>
-		</dependency>
-		<!-- pf test starter -->
-		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-starter-test</artifactId>
-		</dependency>
 		<!-- pf security starter -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-starter-security</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>com.nimbusds</groupId>
 			<artifactId>oauth2-oidc-sdk</artifactId>
-			<version>9.7</version>
+			<version>${oidc.version}</version>
 		</dependency>
 		<!-- Cucumber -->
 		<dependency>
@@ -70,12 +57,6 @@
 			<artifactId>cucumber-junit</artifactId>
 			<version>${cucumber.version}</version>
 			<scope>test</scope>
-			<exclusions>
-				<exclusion>
-					<groupId>org.hamcrest</groupId>
-					<artifactId>hamcrest-core</artifactId>
-				</exclusion>
-			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>io.cucumber</groupId>

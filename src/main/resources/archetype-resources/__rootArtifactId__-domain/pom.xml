@@ -10,13 +10,9 @@
 	<dependencies>
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-		</dependency>
-
-		<!-- pf test starter -->
-		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-starter-test</artifactId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<version>${spring-boot.version}</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>

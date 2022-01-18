@@ -26,6 +26,7 @@
 		<!-- Tell sonar where to look for the coverage file. Property inherited by submodules -->
 		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
 		<jacoco.maven.plugin.version>0.8.6</jacoco.maven.plugin.version>
+		<spring-boot.version>2.6.2</spring-boot.version>
 	</properties>
 
 	<dependencyManagement>

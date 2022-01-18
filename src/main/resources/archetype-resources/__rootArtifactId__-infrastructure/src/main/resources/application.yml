@@ -4,14 +4,3 @@ spring:
       ddl-auto: create-drop
   liquibase:
     enabled: true
-
-kafka:
-  schemaRegistry:
-    address: "http://schem-registry-host:8081"
-  bootstrapAddress: broker:9092
-  topic:
-    topic_${rootAggregateLowerCase}: topic_${rootAggregateLowerCase} 
-  consumergroup:
-    consumer_group_${rootAggregateLowerCase}: ${rootAggregateLowerCase}-consumer-group
-  event:
-    version: 1.0.0

@@ -9,8 +9,6 @@
 	<description>Infrastructure module</description>
 
 	<properties>
-		<kafka.avro.version>6.1.1</kafka.avro.version>
-		<avro.maven.plugin.version>1.10.2</avro.maven.plugin.version>
 	</properties>
 
 	<dependencies>
@@ -30,24 +28,9 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-mongodb</artifactId>
+			<version>${spring-boot.version}</version>
 		</dependency>
 		#end
-		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-starter-jpa</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>com.bnpp.pf.pfspring</groupId>
-					<artifactId>pf-spring-liquibase</artifactId>
-				</exclusion>
-				<!-- la lib kafka-schema-registry-client importe une version des classes de javax.inject via org.glassfish.hk2.external:jakarta.inject -->
-				<exclusion>
-					<groupId>javax.inject</groupId>
-					<artifactId>javax.inject</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
 		<!-- Database -->
 		<dependency>
 			#if ($database == 'postgresql')
@@ -68,20 +51,16 @@
 		</dependency>
 		<!-- test -->
 		<dependency>
-			<groupId>com.bnpp.pf.pfspring</groupId>
-			<artifactId>pf-spring-starter-test</artifactId>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<version>${spring-boot.version}</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
-			<version>4.12</version>  
-			<exclusions>
-				<exclusion>
-					<groupId>org.hamcrest</groupId>
-					<artifactId>hamcrest-core</artifactId>
-				</exclusion>
-			</exclusions>
+			<version>4.13.2/version>
 		</dependency>
 
 		<!-- Mapstruct -->
@@ -91,125 +70,10 @@
 			<version>${org.mapstruct.version}</version>
 		</dependency>
 
-		<!-- Ajout des dépendances nécessaires pour kafka -->
-		<dependency>
-			<groupId>org.springframework.kafka</groupId>
-			<artifactId>spring-kafka</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>io.confluent</groupId>
-			<artifactId>kafka-schema-registry-client</artifactId>
-			<version>${kafka.avro.version}</version>
-			<exclusions>
-				<!-- javax.ws.rs has been renamed to jakarta.ws.rs -->
-				<exclusion>
-					<groupId>javax.ws.rs</groupId>
-					<artifactId>javax.ws.rs-api</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>io.confluent</groupId>
-			<artifactId>kafka-avro-serializer</artifactId>
-			<version>${kafka.avro.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>io.confluent</groupId>
-			<artifactId>kafka-streams-avro-serde</artifactId>
-			<version>${kafka.avro.version}</version>
-			<exclusions>
-				<exclusion>
-					<groupId>org.slf4j</groupId>
-					<artifactId>slf4j-log4j12</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
-			<groupId>org.apache.avro</groupId>
-			<artifactId>avro</artifactId>
-			<version>${avro.maven.plugin.version}</version>
-			<scope>provided</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.fasterxml.jackson.dataformat</groupId>
-			<artifactId>jackson-dataformat-avro</artifactId>
-		</dependency>
-
 	</dependencies>
 
 	<build>
 		<plugins>
-			
-			<!--  openapi generator to generate kafka entities -->
-			<plugin>
-				<groupId>org.openapitools</groupId>
-				<artifactId>openapi-generator-maven-plugin</artifactId>
-				<version>${openapi-generator.maven.plugin.version}</version>
-				<executions>
-					<execution>
-						<id>avro</id>
-						<phase>initialize</phase>
-						<goals>
-							<goal>generate</goal>
-						</goals>
-						<configuration>
-							<skipValidateSpec>true</skipValidateSpec>
-							<inputSpec>${project.basedir}/src/main/resources/kafka.yml</inputSpec>
-							<generatorName>avro-schema</generatorName>
-							<templateDirectory>${project.basedir}/template</templateDirectory>
-							<output>${project.build.directory}/generated-resources/avro/producer</output>
-							<modelNamePrefix>K</modelNamePrefix>
-							<packageName>${package}.infrastructure.event.model</packageName>
-							<configOptions>
-							</configOptions>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-
-			<!--  openapi generator to generate kafka entities -->
-			<plugin>
-				<groupId>org.apache.avro</groupId>
-				<artifactId>avro-maven-plugin</artifactId>
-				<version>${avro.maven.plugin.version}</version>
-				<executions>
-					<!-- Generate producer from avro schema -->
-					<execution>
-						<id>producer</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>schema</goal>
-						</goals>
-						<configuration>
-							<imports>
-								<!-- Mettre les imports des shémas avsc nécessaires à la génération de toutes les entités -->
-							</imports>
-							<sourceDirectory>${project.build.directory}/generated-resources/avro/producer</sourceDirectory>
-							<outputDirectory>${project.build.directory}/generated-sources/openapi/src/main/java</outputDirectory>
-							<stringType>String</stringType>
-						</configuration>
-					</execution>
-
-					<!-- Generate consumer from avro schema -->
-					<execution>
-						<id>consumer</id>
-						<phase>generate-sources</phase>
-						<goals>
-							<goal>schema</goal>
-						</goals>
-						<configuration>
-							<sourceDirectory>${project.basedir}/src/main/resources/avro/consumer</sourceDirectory>
-							<outputDirectory>${project.build.directory}/generated-sources/openapi/src/main/java</outputDirectory>
-							<stringType>String</stringType>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
 
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
