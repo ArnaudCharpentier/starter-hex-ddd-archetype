@@ -3,7 +3,7 @@
 ##  Archetype installation in local maven repository
 
 ```sh
-mvn clean install
+mvn clean install -Darchetype.test.skip=true
 ```
 ## How to use
 ```sh
