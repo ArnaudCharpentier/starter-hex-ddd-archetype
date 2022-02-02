@@ -13,6 +13,7 @@ FileUtils.deleteDirectory(folder)
 projectPath.toFile().eachDirRecurse { File dir ->
     println " ** Processing path ${dir.absolutePath}"
     newDirName = dir.name
+    println "  => dir name ${dir.name}"
     if(newDirName != "META-INF"){
         newDirName = dir.name.toLowerCase()
     }
@@ -20,10 +21,12 @@ projectPath.toFile().eachDirRecurse { File dir ->
     dir.renameTo(newDir)
 
     dir.eachFileRecurse(FileType.FILES) { file ->
-        line = file.readLines().get(0)
-        if(line.contains("__REMOVE_ME__")){
-            println "   |-> Deleting unused file ${file.name}"
-            file.delete()
+        if(file && file.readLines() && file.readLines().size() > 0){
+            line = file.readLines().get(0)
+            if(line.contains("__REMOVE_ME__")){
+                println "   |-> Deleting unused file ${file.name}"
+                file.delete()
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import ${package}.application.config.Authorities;
 
 import io.cucumber.spring.CucumberContextConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Primary;
 
 /**
  * Configuration de Spring
@@ -13,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
  * 
  * Ajouter les classes des services à injecter dans nos steps (Service, Domaine, ...)
  */
+@Primary
 @CucumberContextConfiguration
 @SpringBootTest(
     classes = { 

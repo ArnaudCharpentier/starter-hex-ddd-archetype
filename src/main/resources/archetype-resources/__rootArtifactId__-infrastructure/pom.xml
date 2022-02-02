@@ -37,15 +37,18 @@
 				<!-- PostGreSQL driver -->
 				<groupId>org.postgresql</groupId>
 				<artifactId>postgresql</artifactId>
+				<version>${postgresql.version}</version>
 				<scope>runtime</scope>
 			#elseif ($database == 'mongo')
 				<groupId>de.flapdoodle.embed</groupId>
 				<artifactId>de.flapdoodle.embed.mongo</artifactId>
+				<version>${mongo.version}</version>
 				<scope>test</scope>
 			#else
 				<!-- H2 driver is added by default in test scope with pf-spring-starter-test. The reason for the runtime scope -->
 				<groupId>com.h2database</groupId>
 				<artifactId>h2</artifactId>
+				<version>${h2.version}</version>
 				<scope>runtime</scope>
 			#end
 		</dependency>

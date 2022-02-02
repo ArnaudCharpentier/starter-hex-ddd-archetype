@@ -9,7 +9,7 @@
 	<name>${artifactId} parent POM</name>
 
 	<properties>
-		<java.version>1.8</java.version>
+		<java.version>11</java.version>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -21,6 +21,15 @@
 		<sonar.jacoco.reportPath>${project.basedir}/../target/jacoco.exec</sonar.jacoco.reportPath>
 		<jacoco.maven.plugin.version>0.8.6</jacoco.maven.plugin.version>
 		<spring-boot.version>2.6.2</spring-boot.version>
+		<spring-tx.version>5.3.15</spring-tx.version>
+		#if ($database == 'postgresql')
+		<postgresql.version>42.3.2</postgresql.version>
+		#elseif ($database == 'mongo')
+		<mongo.version>3.3.1</mongo.version>
+		#else
+		<h2.version>2.1.210</h2.version>
+		#end
+		<assertj-core.version>3.22.0</assertj-core.version>
 	</properties>
 
 
